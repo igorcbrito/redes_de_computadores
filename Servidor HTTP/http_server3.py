@@ -8,6 +8,7 @@
 
 # importacao das bibliotecas
 import socket
+import os
 
 # definicao do host e da porta do servidor
 HOST = '' # ip do servidor (em branco)
@@ -35,13 +36,40 @@ while True:
     request = client_connection.recv(1024)
     # imprime na tela o que o cliente enviou ao servidor
     print (request.decode('utf-8'))
-    # abri o arquivo html e li também
-    arquivo = open(r"index.html", encoding="utf-8").read()
-    # declaracao da resposta do servidor
-    http_response = """\
-HTTP/1.1 200 OK
+    request = request.decode('utf-8').split(" ")
+    print(request)
 
-""" + arquivo # adicionei meu código html à resposta do servidor
+    if request[0] == "GET":
+        
+        path = request[1]
+        if not os.path.exists(path):
+            print("O aquivo procurado pelo cliente não foi encontrado.")
+            arquivo = open("notfound.html", encoding ="utf-8").read()
+            http_response = """\
+    HTTP/1.1 404 Not Found\r\n\r\n
+
+    """ + arquivo
+
+        else:
+            try:    # caso entre no else, primeiro será aberto o arquivo do caminho
+                arquivo = open(path, encoding ="utf-8").read()
+                print("Abrindo...")
+
+            except: # caso ocorra erro na abertura do arquivo, será aberto o index.html (caso o usuário passe somente o nome da pasta também)
+                arquivo = open(r"index.html", encoding = "utf-8").read()
+                print("Arquivo não especificado, abrindo página principal.")
+
+            http_response = """\
+    HTTP/1.1 200 OK\r\n\r\n
+
+    """ + arquivo
+    else:
+        print("O comando solicitado pelo cliente não existe.")
+        arquivo = open("badrequest.html", encoding ="utf-8").read()
+        http_response = """\
+HTTP/1.1 400 Bad Request\r\n\r\n
+
+""" + arquivo
     # servidor retorna o que foi solicitado pelo cliente (neste caso a resposta e generica)
     client_connection.send(http_response.encode('utf-8'))
     # encerra a conexao
